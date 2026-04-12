@@ -1,0 +1,178 @@
+ 
+SHORT HORIZON RETURN
+PREDICTION CHALLENGE
+by  i-RAGE
+PRODUCT REQUIREMENTS DOCUMENT (PRD)
+Version 1.0   •   April 2025   •   Kaggle Platform
+
+
+
+1. Executive Summary
+The Short Horizon Return Prediction Challenge, hosted on Kaggle by i-RAGE, is a rigorous quantitative finance competition that tasks participants with building a machine-learning model capable of forecasting the short-term percentage return of an asset's Price variable from a de-identified, multivariate tabular time-series dataset.
+
+The competition is explicitly designed to simulate real-world forecasting conditions: temporal identifiers are stripped, features are anonymized, and the model must generalise from engineered lag-difference signals rather than raw sequence reconstruction. Success reflects genuine predictive signal capture rather than leakage or hindsight engineering.
+
+Core Thesis  "Financial markets do not reward hindsight — they reward foresight." This competition tests whether a participant's model can survive the constraints of reality.
+
+1.1 At-a-Glance Summary
+
+
+2. Competition Overview
+2.1 Background & Motivation
+In professional quantitative finance, short-horizon return forecasting is a highly competitive discipline. Real-world practitioners must build models that generalise across shifting market regimes, operate without lookahead bias, and extract signal from anonymised or proprietary feature sets. This competition replicates those constraints faithfully to produce a benchmark that is meaningful beyond the Kaggle leaderboard.
+
+The challenge was created by i-RAGE as a structured evaluation environment where data scientists, quants, and machine-learning engineers can demonstrate practical forecasting capability under realistic conditions.
+2.2 Problem Statement
+Participants are provided:
+A labeled training set (train.parquet) containing 661,574 row-level observations with 445 predictive features and the TARGET column.
+An unlabeled test set (test.parquet) with 410,139 rows and the same 445 features but no TARGET.
+
+Each row is an independent observation representing the system state at a point in time. Raw temporal ordering is deliberately withheld from the released files — the dataset is presented as shuffled row-level samples. Models must therefore learn predictive structure from the feature space rather than from sequence reconstruction.
+
+Key Constraint  Temporal identifiers are NOT included in the released data. Reconstructing the original time order is not the path to success — extracting genuine predictive signal from the 445 available features is.
+2.3 Prediction Target Definition
+TARGET  = 100 × (Price[t+H] − Price[t]) / Price[t]
+
+Where:
+Price[t] is the current observed price at time t.
+Price[t+H] is the price H windows into the future.
+H is a fixed, undisclosed forward window horizon.
+The multiplication by 100 converts the ratio into a percentage return.
+
+This is a continuous regression target. Positive values indicate a price increase; negative values indicate a decline. The magnitude reflects the size of the movement.
+
+
+3. Dataset Specification
+3.1 File Inventory
+3.2 Dataset Scale
+3.3 Column Structure
+The dataset contains exactly 447 columns in training and 446 in test:
+
+3.4 Feature Engineering Details
+The dataset was built from daily source files. For each observation, the pipeline retained the current feature values and computed three additional lag-difference signals per base feature using predefined historical windows:
+
+
+Important  Exact values of T1, T2, T3, and H are not disclosed to participants. They are fixed constants set by the competition organiser.
+3.5 Feature Naming Convention
+All variables are anonymised using structured tag-style codes. No external metadata is required to participate. The naming convention follows these rules:
+
+A single code block (e.g., S01_F01_U01) identifies a single-source family feature.
+Multiple code blocks (e.g., S04_V19_V12) indicate a feature carrying information from multiple source or derived information groups.
+Features sharing a prefix belong to the same broader information family.
+Suffixes _LagT1, _LagT2, _LagT3 identify lag-difference versions of the underlying base feature.
+
+Representative examples of feature names:
+
+
+Special Features  SO3_T is explicitly noted as a published covariate available to all participants and does not carry lag-difference variants. Price is both a base feature and the basis for the TARGET computation.
+
+
+4. Evaluation & Scoring
+4.1 Primary Metric: R² (Coefficient of Determination)
+All submissions are ranked using the R² score, defined as:
+
+R² = 1 − Σ(y_true − y_pred)² / Σ(y_true − mean(y_true))²
+
+Interpretation guide:
+
+Financial return series are inherently low-signal, making even modest positive R² values on out-of-sample data a meaningful achievement. Models should not be tuned to artificially inflate public leaderboard scores.
+4.2 Leaderboard Structure
+Public Leaderboard: Scores visible to all participants during the competition. Computed on a subset of the test set.
+Private Leaderboard: Final rankings determined after close, computed on the full held-out test set.
+
+Leakage Risk  Overfitting to the public leaderboard through excessive submission tuning can cause significant rank drops on the private leaderboard. Prioritise cross-validation over leaderboard hill-climbing.
+4.3 Submission Mechanics
+Submissions must be made exclusively through a reproducible Kaggle Notebook.
+Manual uploads of pre-computed CSVs are considered invalid.
+The output file must be named submission.csv.
+The file must contain exactly two columns: ID (integer) and TARGET (float).
+Rows must match the test.parquet IDs exactly — no more, no fewer.
+
+Sample submission format:
+ID,TARGET   ← header row
+672374,0.0
+672375,-0.342
+
+
+5. Prizes & Incentives
+5.1 Prize Structure
+Total prize pool available: Rs. 4,50,000 (Indian Rupees). Prizes are awarded based on final private leaderboard rank.
+
+
+Eligibility Note  Prize eligibility is subject to Kaggle's standard competition rules and the competition-specific terms set by i-RAGE. Ensure all submissions are reproducible via the submitted notebook.
+
+
+6. Technical Requirements & Constraints
+6.1 Mandatory Submission Constraints
+All predictions must be generated inside a Kaggle Notebook environment.
+The notebook must be fully reproducible — another person running it must produce the identical submission.csv.
+No pre-computed predictions uploaded externally will be accepted.
+The submission file must be named submission.csv exactly.
+External datasets are permitted only if allowed by competition rules — verify in the Data tab.
+6.2 Data Constraints & Realism Design
+Temporal identifiers are stripped from released files. Sequence reconstruction is not a viable strategy.
+Feature names are anonymised. Domain knowledge of the underlying asset class may help but is not required.
+The forward horizon H is fixed but undisclosed — models must generalise without knowing the exact look-ahead window.
+Lag windows T1, T2, T3 are fixed constants (T3 > T2 > T1) but not disclosed numerically.
+SO3_T is a known public covariate that may carry interpretable real-world meaning for participants who identify it.
+6.3 Recommended Modelling Approaches
+Given the dataset structure and constraints, the following approaches are commonly effective in similar competitions:
+
+Gradient Boosted Trees
+LightGBM, XGBoost, CatBoost are strong baselines for tabular regression.
+Feature importance can identify the most predictive base features and lag windows.
+Feature Engineering
+Cross-feature interactions between lag windows may reveal regime-dependent signals.
+Feature selection and dimensionality reduction (e.g., PCA) may help manage the 445-dimensional input.
+Normalisation of lag-difference features is important as their scale depends on the base feature scale.
+Validation Strategy
+Since temporal structure is hidden in the released data, standard random k-fold CV may be used.
+However, if the sequence can be partially reconstructed from feature monotonicity or Price trends, time-series aware cross-validation is preferable to avoid data leakage.
+Prefer stable cross-validation over public leaderboard score as the primary guide.
+Ensemble Methods
+Stacking or blending multiple model families (GBT + linear + neural) typically improves R² over single models.
+Avoid over-engineering ensembles — reproducibility inside a Kaggle Notebook is mandatory.
+
+
+7. Risks, Pitfalls & Mitigations
+
+
+8. Competition Timeline
+
+URGENT  The competition closes in approximately 3 hours from the time of this document. Ensure your final notebook submission is complete, reproducible, and submitted before the deadline.
+
+
+9. Success Criteria
+9.1 Model Performance Benchmarks
+
+Financial return prediction is a notoriously hard problem. Positive R² on unseen financial data is a meaningful signal of model quality. Participants should focus on building models that are statistically robust rather than maximally fitted to training data.
+9.2 Non-Performance Success Criteria
+Submission is valid: generated from a reproducible Kaggle notebook, named correctly, and contains no missing IDs.
+No data leakage: the model pipeline does not incorporate any future information from the test period.
+Generalisation over fitting: cross-validation R² is stable and close to leaderboard R², indicating no overfitting.
+Documentation quality: notebook is well-commented and the modelling approach is clearly explainable.
+
+
+10. Appendix
+10.1 Glossary
+10.2 Quick-Start Checklist
+Use this checklist before final submission:
+
+train.parquet and test.parquet loaded correctly into notebook.
+Feature pipeline applied consistently to both train and test.
+No test-set statistics used during training preprocessing.
+Model trained and validated with stable cross-validation R².
+Predictions generated for all 410,139 test rows.
+Output file named submission.csv with exactly two columns: ID, TARGET.
+Random seeds fixed throughout notebook.
+Notebook run end-to-end (Commit & Run) to confirm reproducibility.
+Submission made via Kaggle Notebook submit button — not manual upload.
+Submission confirmed as accepted on the competition page before deadline.
+10.3 References & Resources
+Competition URL: kaggle.com/competitions/short-horizon-return-prediction-challenge-by-i-rage
+Kaggle Notebooks documentation: kaggle.com/docs/notebooks
+R² metric reference: scikit-learn.org/stable/modules/generated/sklearn.metrics.r2_score.html
+Parquet file format: pandas.pydata.org/docs/reference/api/pandas.read_parquet.html
+
+
+End of Document — PRD v1.0  |  Short Horizon Return Prediction Challenge by i-RAGE
