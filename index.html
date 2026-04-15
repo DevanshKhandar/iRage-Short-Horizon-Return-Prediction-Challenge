@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReturnPredictor | Quantitative Analytics Dashboard</title>
+    <meta name="description" content="Quantitative analytics dashboard for short-horizon price return prediction using ensemble LightGBM models.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Top Bar -->
+    <header class="topbar" id="topbar">
+        <div class="topbar-left">
+            <div class="logo-mark">RP</div>
+            <div class="topbar-title">
+                <span class="title-main">ReturnPredictor</span>
+                <span class="title-sep">|</span>
+                <span class="title-sub">Quantitative Analytics</span>
+            </div>
+        </div>
+        <nav class="topbar-nav">
+            <a href="#overview" class="tn-link active" data-section="overview">Overview</a>
+            <a href="#performance" class="tn-link" data-section="performance">Performance</a>
+            <a href="#features" class="tn-link" data-section="features">Features</a>
+            <a href="#distributions" class="tn-link" data-section="distributions">Distributions</a>
+            <a href="#architecture" class="tn-link" data-section="architecture">Architecture</a>
+        </nav>
+        <div class="topbar-right">
+            <div class="status-indicator">
+                <span class="status-dot"></span>
+                <span class="status-text">Model Trained</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <!-- Overview Section -->
+        <section class="panel" id="overview">
+            <!-- KPI Strip -->
+            <div class="kpi-strip">
+                <div class="kpi" id="kpi-r2">
+                    <div class="kpi-header">
+                        <span class="kpi-label">R-SQUARED</span>
+                        <span class="kpi-badge kpi-badge-primary">OOF</span>
+                    </div>
+                    <div class="kpi-value" data-target="r2">--</div>
+                    <div class="kpi-footer">Coefficient of Determination</div>
+                </div>
+                <div class="kpi-divider"></div>
+                <div class="kpi" id="kpi-rmse">
+                    <div class="kpi-header">
+                        <span class="kpi-label">RMSE</span>
+                    </div>
+                    <div class="kpi-value" data-target="rmse">--</div>
+                    <div class="kpi-footer">Root Mean Square Error</div>
+                </div>
+                <div class="kpi-divider"></div>
+                <div class="kpi" id="kpi-mae">
+                    <div class="kpi-header">
+                        <span class="kpi-label">MAE</span>
+                    </div>
+                    <div class="kpi-value" data-target="mae">--</div>
+                    <div class="kpi-footer">Mean Absolute Error</div>
+                </div>
+                <div class="kpi-divider"></div>
+                <div class="kpi" id="kpi-features">
+                    <div class="kpi-header">
+                        <span class="kpi-label">FEATURES</span>
+                    </div>
+                    <div class="kpi-value" data-target="features">--</div>
+                    <div class="kpi-footer">Selected + Engineered</div>
+                </div>
+                <div class="kpi-divider"></div>
+                <div class="kpi" id="kpi-models">
+                    <div class="kpi-header">
+                        <span class="kpi-label">MODELS</span>
+                    </div>
+                    <div class="kpi-value" data-target="models">--</div>
+                    <div class="kpi-footer">Ensemble Members</div>
+                </div>
+                <div class="kpi-divider"></div>
+                <div class="kpi" id="kpi-train">
+                    <div class="kpi-header">
+                        <span class="kpi-label">TRAIN</span>
+                    </div>
+                    <div class="kpi-value" data-target="train">--</div>
+                    <div class="kpi-footer">Observations</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Performance Section -->
+        <section class="panel" id="performance">
+            <div class="panel-header">
+                <h2 class="panel-title">Cross-Validation Performance</h2>
+                <span class="panel-subtitle">5-Fold GroupKFold | Temporal CV_GROUP Split</span>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>R<sup>2</sup> by Fold</h3>
+                        <span class="card-badge" id="mean-r2-badge">--</span>
+                    </div>
+                    <div class="chart-wrap">
+                        <canvas id="foldChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Fold Breakdown</h3>
+                    </div>
+                    <div class="data-table" id="fold-table">
+                        <div class="dt-loading">Loading data...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Feature Importance Section -->
+        <section class="panel" id="features">
+            <div class="panel-header">
+                <h2 class="panel-title">Feature Importance Analysis</h2>
+                <span class="panel-subtitle">Top predictive features ranked by information gain</span>
+            </div>
+            <div class="card card-full">
+                <div class="card-header">
+                    <h3>Top 30 Features</h3>
+                    <div class="toggle-group">
+                        <button class="toggle active" id="btn-gain" data-type="gain">Gain</button>
+                        <button class="toggle" id="btn-split" data-type="split">Splits</button>
+                    </div>
+                </div>
+                <div class="chart-wrap chart-tall">
+                    <canvas id="featureChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Distributions Section -->
+        <section class="panel" id="distributions">
+            <div class="panel-header">
+                <h2 class="panel-title">Prediction Distributions</h2>
+                <span class="panel-subtitle">Actual vs predicted target distributions and residual analysis</span>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header"><h3>Actual vs OOF Predicted</h3></div>
+                    <div class="chart-wrap"><canvas id="distChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h3>Predicted vs Actual</h3></div>
+                    <div class="chart-wrap"><canvas id="scatterChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h3>Residual Distribution</h3></div>
+                    <div class="chart-wrap"><canvas id="residualChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h3>Test Predictions</h3></div>
+                    <div class="chart-wrap"><canvas id="testPredChart"></canvas></div>
+                </div>
+            </div>
+            <!-- Stats Tables -->
+            <div class="grid-2 mt-16">
+                <div class="card">
+                    <div class="card-header"><h3>Target Statistics</h3></div>
+                    <div class="stats-body" id="actual-stats"></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h3>Prediction Statistics</h3></div>
+                    <div class="stats-body" id="pred-stats"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Section -->
+        <section class="panel" id="architecture">
+            <div class="panel-header">
+                <h2 class="panel-title">Model Architecture</h2>
+                <span class="panel-subtitle">Ensemble pipeline design and hyperparameter configuration</span>
+            </div>
+
+            <!-- Pipeline Steps -->
+            <div class="arch-flow">
+                <div class="arch-step">
+                    <div class="arch-num">1</div>
+                    <div class="arch-content">
+                        <h4>Data Ingestion</h4>
+                        <p>Load Parquet files<br>661K train / 410K test</p>
+                    </div>
+                </div>
+                <div class="arch-arrow">&rarr;</div>
+                <div class="arch-step">
+                    <div class="arch-num">2</div>
+                    <div class="arch-content">
+                        <h4>Feature Selection</h4>
+                        <p>Correlation filtering<br>|corr| &gt; 0.002 with target</p>
+                    </div>
+                </div>
+                <div class="arch-arrow">&rarr;</div>
+                <div class="arch-step">
+                    <div class="arch-num">3</div>
+                    <div class="arch-content">
+                        <h4>Target Processing</h4>
+                        <p>Winsorize P1/P99<br>Reduce outlier impact</p>
+                    </div>
+                </div>
+                <div class="arch-arrow">&rarr;</div>
+                <div class="arch-step">
+                    <div class="arch-num">4</div>
+                    <div class="arch-content">
+                        <h4>Multi-Config LGB</h4>
+                        <p>Huber + MSE + Fair loss<br>3 seeds per config</p>
+                    </div>
+                </div>
+                <div class="arch-arrow">&rarr;</div>
+                <div class="arch-step">
+                    <div class="arch-num">5</div>
+                    <div class="arch-content">
+                        <h4>Ensemble Blend</h4>
+                        <p>Optimal weight search<br>Prediction scaling</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Config Table -->
+            <div class="card card-full mt-16">
+                <div class="card-header">
+                    <h3>Hyperparameter Configuration</h3>
+                    <span class="card-badge card-badge-accent">LightGBM Ensemble</span>
+                </div>
+                <div class="config-grid" id="config-grid">
+                    <div class="dt-loading">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Download -->
+            <div class="download-bar mt-16">
+                <div class="dl-info">
+                    <span class="dl-label">SUBMISSION FILE</span>
+                    <span class="dl-detail">submission.csv &middot; 410,139 predictions</span>
+                </div>
+                <a href="../output/submission.csv" download class="dl-btn" id="dl-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Download
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <span>Short-Horizon Return Prediction Challenge</span>
+        <span class="footer-dot">&middot;</span>
+        <span>LightGBM Ensemble &middot; GroupKFold CV &middot; Chart.js</span>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
