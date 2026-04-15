@@ -1,0 +1,1 @@
+{"model_type": "LightGBM Ensemble", "n_configs": 3, "loss_functions": ["Huber", "MSE", "Fair"], "cv_strategy": "GroupKFold", "n_folds": 5, "total_features": 150, "feature_selection": "Mutual Information top-K", "target_preprocessing": "100x Variance Inflation", "multi_seed": true, "seeds_per_config": 3, "total_models": 45, "optimal_weights": [0.4, 0.4, 0.2]}

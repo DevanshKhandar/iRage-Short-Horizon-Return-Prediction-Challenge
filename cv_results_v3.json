@@ -1,0 +1,8 @@
+{
+  "final_r2": 0.000557,
+  "mse_r2": 0.000387,
+  "huber_r2": 0.000557,
+  "blend_weight_mse": 0.0,
+  "scale_factor": 1.02,
+  "n_features": 157
+}
